@@ -28,7 +28,7 @@ function start() {
             type: "list",
             message: "What would you like to do?",
             choices: ["View All Employees", "Add Employee", "View All Roles", "Add Role", 
-                "View All Departments", "Add Department", "Exit"]
+                "View All Departments", "Add Department", "Update Role", "Exit"]
             })
         .then(function(answer) {
         switch (answer.action) {
@@ -50,7 +50,7 @@ function start() {
             case "Add Department":
                 addDepartment();
                 break;
-            case "Update Employee":
+            case "Update Role":
                 updateEmployee();
                 break;
             case "Exit":
@@ -200,4 +200,42 @@ function start() {
             start();
         };
 
+    async function updateEmployee() {
+            const query = "SELECT * FROM Employee";
+            connection.query(query, err, response);
+                if (err) throw err;
+                inquirer.prompt([
+                    {
+                 type: "list",
+                 name: "update",
+                 message: "Which employee are you updating?",
+                 choices: ()=> {
+                    return response.map(val => val.first_name + " " + val.last_name);
+                 }
+                },
+                {
+                    type: "list",
+                    name: "role",
+                    message: "Choose a new role for this employee",
+                    choices: ()=> data.map(val => val.title)
+                }
+                ]).then(function(response){
+                    const firstName = response.update.slice(0, response.update.indexOf(""));
+                    const lastName = response.update.slice(response.update.indexOf(" ") + 1, response.update.length);
+                    const roleQuery = "SELECT role_id FROM Role WHERE ?";
+                    connection.query(roleQuery, {title: response.role}, (err, result) => {
+                        if(err) throw err;
+                        const updateQuery = "UPDATE Employee SET ? WHERE ? AND ?";
+                        connection.query(updateQuery, [{ role_id: result[0].role_id}, {
+                        first_name: firstName}, {last_name: lastName}],
+                        function (err, result) {
+                                if (err)
+                                    throw err;
+                                console.log("Role Updated!");
+                                start();
+                            });
+                        });
+                    });
+            };
+         
         
